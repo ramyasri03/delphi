@@ -1,0 +1,486 @@
+Caption,Name,ClassName,ParentNode,Contain,Left,Top,Width,Height,FontName,Color,Type,EventName,EventCount,EventProcedures,ValidationRules,LabelCount,TextboxCount,inputboxcount,ButtonCount,DateCount,CalendarCount,PanelCount,FloatCount,CheckboxCount,ListBoxCount,SpecButonCount,ComboBoxCount,StatusBarCount
+Position Reporting Entry,frmPOSENTRY,TfrmPOSENTRY,,"MainPageControl, StatusBar1, pnlDBCONFIG, pnlUSERID, pnlNOSTRO, pnlCHNGPWD, qryMAIN, qryLOOKUP, MainMenu1, pmuSTATUS, PopupMenu2, ADOConnection1, PrintDialog1",196,108,572,356,Arial,clBtnFace,tfrmposentry,"FormClose, FormCreate, FormDestroy, FormShow",4,"//qryMAIN.SQL.Text := utl.InifileMgr.ReadSectionData ('sql_correction_entry_checkout_flush', '');
+	qryMAIN.SQL.Text := utl.Files.ReadSection (utl.Inifile,
+  										'sql_correction_entry_checkout_flush', ' ');
+  qryMAIN.SQL.Text := ReplaceStandardAppVars (qryMAIN.SQL.Text);
+	odbc.ExecuteSQL (qryMAIN, True);
+  LogEntry ('LOGGED OUT ');---
+odbc:= LWODBCMgr.Create;
+  utl	:= lwMutils.Create;
+  rpx	:= _LWrpx.create;
+	lwdbs	:= LWDataSources.Create;
+//  gridSorter	:= LWHeaderSorter.Create;
+//  gridSorter.StringGrid := grdAPPRLIST;
+  if (uppercase (ParamStr (1)) = 'DEBUG') then debug := True else debug := False;
+  // (1.4.0) assign the default size of the main window
+  Width := 580;
+  Height := 410;
+	MainPageControl.Align := alClient;
+  tag := 99;
+  iSTATUSCol 	:= 0;
+  iUIDCol			:= 0;
+  iActiveRow	:= 0;
+  iTypeCol    := 0;
+  correction	:= False;
+  sACTION_DESC:= 'corrected';
+  pnlDEPTSYSLIST.Top := pnlSYSCTL.Top;
+  pnlDEPTSYSLIST.Left := pnlSYSCTL.Left;
+  pctlUSERIDMAINT.ActivePage := TabSheet1;
+  ClientWidth	:= MainPageControl.Left + MainPageControl.Width+1;
+  ClientHeight:= MainPageControl.Top + MainPageControl.Height+StatusBar1.Height+ 1;
+  MainPageControl.ActivePageIndex := 0;
+  lastControl	:= nil;
+  sUID := '';
+  pnlUSERID.Left 	:= 3;
+  pnlUSERID.Top		:= 15;
+	grdUSERID.ColCount := USERIMAINTGRID;
+  pnlNOSTRO.Left	:= 30;
+  pnlNOSTRO.Top		:= 30;
+  pnlCHNGPWD.Left	:= 30;
+  pnlCHNGPWD.Top	:= 30;
+  grdUSERID.ColCount := 10;
+	grdUSERID.ColWidths [0] := 0;
+	grdUSERID.Cells [0,0]		:= '';
+	grdUSERID.ColWidths [1] := 250;
+	grdUSERID.Cells [1,0]		:= 'Domain Qualified Userid';
+	grdUSERID.ColWidths [2] := 75;
+	grdUSERID.Cells [2,0]		:= 'Dept';
+	grdUSERID.ColWidths [3] := colwidth_FLAGS;
+	grdUSERID.Cells [3,0]		:= 'Qry';
+	grdUSERID.ColWidths [4] := colwidth_FLAGS;
+	grdUSERID.Cells [4,0]		:= 'Inp';
+	grdUSERID.ColWidths [5] := colwidth_FLAGS;
+	grdUSERID.Cells [5,0]		:= 'Chk';
+	grdUSERID.ColWidths [6] := colwidth_FLAGS;
+	grdUSERID.Cells [6,0]		:= 'Adm';
+	grdUSERID.ColWidths [7] := colwidth_FLAGS;
+	grdUSERID.Cells [7,0]		:= 'UsA';
+	grdUSERID.ColWidths [8] := colwidth_FLAGS;
+	grdUSERID.Cells [8,0]		:= 'Rpt';
+	grdUSERID.ColWidths [9] := colwidth_FLAGS;
+	grdUSERID.Cells [9,0]		:= 'Sys';
+	for i := 3 to grdUSERID.ColCount-1 do grdUSERID.AlignCol[i] := alCenter;
+	for i := 3 to grdUSERID.ColCount-1 do grdUSERID.AlignCell [i, 0] := alCenter;
+  dtSTACSDATE.DateTime := now;
+  edtPRINTSTACSDATE.DateTime := now;
+  // (1.4.0) removed CipherManager1 initialisation, not required in new codes
+//  CipherManager1.InitKey (keycode, nil);
+//  keycode = '879uih4fewdty7ugh32e67yfuey897uhi4bjk2iwgyjh247ewftgyu247ef8yi';---
+//	gridSorter.Free;
+	lwdbs.Free;
+	odbc.Free;
+	utl.Free;
+  rpx.Free;---
+Procedure not found","Here are the validation rules, checks, and constraints identified from the provided code:
+
+1 Database operation must execute successfully: The SQL query for 'sql_correction_entry_checkout_flush' must execute without errors, as indicated by the 'True' parameter in odbc.ExecuteSQL.
+2 User ID grid column count must be 10: The grdUSERID component is explicitly set to have 10 columns.
+3 Grid column 0 width must be 0: The width of the first column in grdUSERID is set to 0.
+4 Grid column 1 width must be 250: The width of the second column in grdUSERID is set to 250.
+5 Grid column 2 width must be 75: The width of the third column in grdUSERID is set to 75.
+6 Grid columns 3 through 9 width must be colwidth_FLAGS: The widths of columns 3 through 9 in grdUSERID are set to a value determined by 'colwidth_FLAGS'.
+7 Grid column 1 header text must be 'Domain Qualified Userid': The header for the second column in grdUSERID is set to this specific string.
+8 Grid column 2 header text must be 'Dept': The header for the third column in grdUSERID is set to this specific string.
+9 Grid column 3 header text must be 'Qry': The header for the fourth column in grdUSERID is set to this specific string.
+10 Grid column 4 header text must be 'Inp': The header for the fifth column in grdUSERID is set to this specific string.
+11 Grid column 5 header text must be 'Chk': The header for the sixth column in grdUSERID is set to this specific string.
+12 Grid column 6 header text must be 'Adm': The header for the seventh column in grdUSERID is set to this specific string.
+13 Grid column 7 header text must be 'UsA': The header for the eighth column in grdUSERID is set to this specific string.
+14 Grid column 8 header text must be 'Rpt': The header for the ninth column in grdUSERID is set to this specific string.
+15 Grid column 9 header text must be 'Sys': The header for the tenth column in grdUSERID is set to this specific string.
+16 Grid columns 3 through 9 content must be center aligned: The content of grdUSERID columns 3 to 9 is set to be center aligned.
+17 Grid columns 3 through 9 headers must be center aligned: The headers of grdUSERID columns 3 to 9 are set to be center aligned.
+18 dtSTACSDATE must contain a valid date and time value: The dtSTACSDATE component is assigned the current date and time, implying it must hold a valid TDateTime value.
+19 edtPRINTSTACSDATE must contain a valid date and time value: The edtPRINTSTACSDATE component is assigned the current date and time, implying it must hold a valid TDateTime value.",,,,,,,,,,,,,
+,MainPageControl,TPageControl,Position Reporting Entry,"6 pages: Entry, Approval List, Correction, Awaiting Confirmation, Reports, System Control",2,0,589,343,Arial,clWindowText,tabcontrol,,0,,,,,,,,,,,,,,,
+Entry,mainTAB,TTabSheet,MainPageControl,"Dept., Entry Date, Value Date, Input Date, Entry Date, Transaction Type, Reported, edtDEPT, edtENTRYDATE, edtVALUEDATE, Clear, edtTYPE, edtPOSREF, Post && Clear (F10), pnlENTRYITEMS, Post Same (F8), FE EXCHANGE (Information), edtAPPROVEDATE",,,,,,,tabpage,,0,,,16,1,12,3,2,0,1,3,1,0,0,0,0
+Dept.,Label1,TLabel,Entry,,8,16,31,16,,,label,,0,,,,,,,,,,,,,,,
+Entry Date,lblDfm1,TLabel,Entry,,181,24,50,14,Arial,clWindowText,label,,0,,,,,,,,,,,,,,,
+Value Date,Label5,TLabel,Entry,,368,8,64,16,,,label,,0,,,,,,,,,,,,,,,
+Input Date,Label17,TLabel,Entry,,173,8,59,16,,,label,,0,,,,,,,,,,,,,,,
+Entry Date,lblDfm2,TLabel,Entry,,382,24,50,14,Arial,clWindowText,label,,0,,,,,,,,,,,,,,,
+Transaction Type,Label4,TLabel,Entry,,8,216,99,16,,,label,,0,,,,,,,,,,,,,,,
+Reported,lblRPT,TLabel,Entry,,318,243,52,16,,,label,,0,,,,,,,,,,,,,,,
+,edtDEPT,LWEnhancedEdit,Entry,,48,12,115,22,Courier New,clWindowText,dAny,edtDEPTExit,1,"edtDEPT.Text := trim(edtDEPT.Text);
+  if (edtDEPT.Text = '') then exit;
+	qryMAIN.SQL.Text := 'select * from deptlist where deptcode = '+#39+edtDEPT.Text+#39;
+	qryMAIN.Open;
+	if (qryMAIN.RecordCount=0) then begin
+  	MessageDlg ('Invalid department code', mtWarning, [mbok], 0);
+  	try if edtDEPT.CanFocus then edtDEPT.SetFocus; except","Here are the validation rules extracted from the code:
+
+1 Department code must not be empty after trimming whitespace.
+2 Department code must exist in the deptlist table.",,,,,,,,,,,,,
+,edtENTRYDATE,LWEnhancedEdit,Entry,,237,12,111,22,Courier New,clWindowText,dDate,edtENTRYDATEExit,1,if (edtVALUEDATE.Text = '') then edtVALUEDATE.Text := edtENTRYDATE.Text;,"1 edtVALUEDATE must have a value. If edtVALUEDATE is empty, it defaults to the value of edtENTRYDATE.",,,,,,,,,,,,,
+,edtVALUEDATE,LWEnhancedEdit,Entry,,438,12,113,22,Courier New,clWindowText,dDate,,0,,,,,,,,,,,,,,,
+Clear,btnCLEAR,TButton,Entry,,306,276,123,23,Arial,clWindowText,button,btnCLEARClick,1,"sUID := '';
+	edtENTRYDATE.Text := DateToStr (now);
+	edtVALUEDATE.Text	:= '';
+  edtREFERENCE.Text	:= '';
+  edtTHEIRREF.Text	:= '';
+	edtDRACCT.Text	:= '';
+	edtDRACCTNAME.Text	:= '';
+	edtCRACCT.Text	:= '';
+	edtCRACCTNAME.Text	:= '';
+	edtDRCUR.Text	:= '';
+	edtDRAMT.Text	:= '';
+	edtCRCUR.Text	:= '';
+	edtCALC.Text	:= '*';
+	edtEXCHRATE.Text	:= '1';
+	edtCRAMT.Text	:= '';
+  CorrectionSheet.TabVisible := True;
+  tabINCOMPLETE.TabVisible := True;
+  edtAPPROVEDATE.Text	:= '';
+	correction := False;
+  chkFEEXCH.Checked := False;
+  edtPOSREF.Text := '';
+  edtPOSREF.Visible := False;
+  edtVALUEDATE.Enabled := True;
+  btnPOST.Visible := True;
+  RepeatInput1.Visible := True;
+  edtAPPROVEDATE.Visible := False;
+	lblRPT.Visible := False;
+  pnlENTRYITEMS.Enabled := True;
+  RepeatInput1.Enabled := True;
+	utl.InifileMgr.Inifilename := utl.Inifile;
+  //qryMAIN.SQL.Text := utl.InifileMgr.ReadSectionData ('sql_correction_entry_checkout_flush', '');
+  qryMAIN.SQL.Text := utl.Files.ReadSection (utl.Inifile,
+  									'sql_correction_entry_checkout_flush', ' ');
+  qryMAIN.SQL.Text := ReplaceStandardAppVars (qryMAIN.SQL.Text);
+	odbc.ExecuteSQL (qryMAIN, True);
+  edtENTRYDATE.SetFocus;","Here are the validation rules, checks, or constraints extracted from the provided code:
+
+1.  edtENTRYDATE is initialized with the current system date, implying it must contain a valid date.
+2.  edtVALUEDATE is cleared, implying it expects user input that must be a valid date.
+3.  edtREFERENCE is cleared, implying it expects user input that must be a string value.
+4.  edtTHEIRREF is cleared, implying it expects user input that must be a string value.
+5.  edtDRACCT is cleared, implying it expects user input that must be an account identifier.
+6.  edtDRACCTNAME is cleared, implying it expects user input that must be an account name.
+7.  edtCRACCT is cleared, implying it expects user input that must be an account identifier.
+8.  edtCRACCTNAME is cleared, implying it expects user input that must be an account name.
+9.  edtDRCUR is cleared, implying it expects user input that must be a currency code.
+10. edtDRAMT is cleared, implying it expects user input that must be a numeric amount.
+11. edtCRCUR is cleared, implying it expects user input that must be a currency code.
+12. edtCALC is initialized with the asterisk character, implying it expects a specific calculation character.
+13. edtEXCHRATE is initialized with the numeric value 1, implying it expects a numeric exchange rate.
+14. edtCRAMT is cleared, implying it expects user input that must be a numeric amount.
+15. edtAPPROVEDATE is cleared, implying it expects user input that must be a valid date if used.
+16. chkFEEXCH is initialized to an unchecked state (false), implying it expects a boolean value.
+17. edtPOSREF is cleared, implying it expects user input that must be a string reference if used.",,,,,,,,,,,,,
+,edtTYPE,LWEnhancedEdit,Entry,,118,211,91,22,Courier New,clWindowText,dAny,edtTYPEExit,1,DetermineTransactionType;,"1 Transaction type logic enforcement : The system applies business rules to determine and validate a transaction type.
+2 Data completeness for type determination : All underlying data required by the transaction type determination process must be present and valid.",,,,,,,,,,,,,
+,edtPOSREF,LWEnhancedEdit,Entry,,10,242,157,22,Courier New,clWindowText,dAny,,0,,,,,,,,,,,,,,,
+Post && Clear (F10),btnPOSTCLR,TButton,Entry,,8,276,123,23,Arial,clWindowText,button,Commit1Click,1,Procedure not found,,,,,,,,,,,,,,
+,pnlENTRYITEMS,TPanel,Entry,"Remarks, INWARD Currency && Amount, INWARD ACCT, OUTWARD ACCT, Exchange Rate, Reference, Currency, OUTWARD Amount, Outward, edtTHEIRREF, edtDRACCT, edtDRCUR, edtDRAMT, edtCRACCT, edtCRCUR, edtCRAMT, edtCALC, edtEXCHRATE, edtDRACCTNAME, edtCRACCTNAME, edtREFERENCE",8,40,563,165,,,tpanel,,0,,,,,,,,,,,,,,,
+Remarks,Label2,TLabel,pnlENTRYITEMS,,2,33,52,16,,,label,,0,,,,,,,,,,,,,,,
+INWARD Currency && Amount,Label6,TLabel,pnlENTRYITEMS,,4,70,156,15,Arial,clRed,label,,0,,,,,,,,,,,,,,,
+INWARD ACCT,Label8,TLabel,pnlENTRYITEMS,,0,118,90,16,Arial,clRed,label,,0,,,,,,,,,,,,,,,
+OUTWARD ACCT,Label9,TLabel,pnlENTRYITEMS,,0,146,104,16,Arial,clGreen,label,,0,,,,,,,,,,,,,,,
+Exchange Rate,Label10,TLabel,pnlENTRYITEMS,,293,71,73,14,Arial,clBlack,label,,0,,,,,,,,,,,,,,,
+Reference,Label18,TLabel,pnlENTRYITEMS,,3,5,58,16,,,label,,0,,,,,,,,,,,,,,,
+Currency,Label7,TLabel,pnlENTRYITEMS,,219,70,49,15,Arial,clGreen,label,,0,,,,,,,,,,,,,,,
+OUTWARD Amount,Label12,TLabel,pnlENTRYITEMS,,379,70,106,15,Arial,clGreen,label,,0,,,,,,,,,,,,,,,
+Outward,Label11,TLabel,pnlENTRYITEMS,,219,56,46,15,Arial,clGreen,label,,0,,,,,,,,,,,,,,,
+,edtTHEIRREF,LWEnhancedEdit,pnlENTRYITEMS,,77,31,465,22,Courier New,clWindowText,dAny,,0,,,,,,,,,,,,,,,
+,edtDRACCT,LWEnhancedEdit,pnlENTRYITEMS,,110,114,140,22,Courier New,clWindowText,dAny,edtDRACCTExit,1,Procedure not found,,,,,,,,,,,,,,
+,edtDRCUR,LWEnhancedEdit,pnlENTRYITEMS,,4,86,46,22,Courier New,clWindowText,dAny,edtDRCURExit,1,Procedure not found,,,,,,,,,,,,,,
+,edtDRAMT,LWEnhancedEdit,pnlENTRYITEMS,,53,86,164,22,Courier New,clWindowText,dFloat,edtDRAMTExit,1,"if (edtDRAMT.FloatValue = 0) or (edtEXCHRATE.FloatValue = 0) then exit;
+	if (Sender = edtCALC) then
+  	if (edtCALC.Text <> '*') and (edtCALC.Text <> '/') then edtCALC.Text := '*';
+	case edtCALC.Text[1] of
+  '*': edtCRAMT.FloatValue := edtDRAMT.FloatValue * edtEXCHRATE.FloatValue;
+  '/': edtCRAMT.FloatValue := (edtDRAMT.FloatValue / edtEXCHRATE.FloatValue);","1 edtDRAMT.FloatValue must be non-zero. If zero, the procedure exits.
+2 edtEXCHRATE.FloatValue must be non-zero. If zero, the procedure exits.
+3 edtCALC.Text value must be '*' or '/'. If edtCALC is the sender and its text is neither '*' nor '/', it defaults to '*'.
+4 The first character of edtCALC.Text must be '*' or '/'. This determines the calculation performed for edtCRAMT.FloatValue.",,,,,,,,,,,,,
+,edtCRACCT,LWEnhancedEdit,pnlENTRYITEMS,,110,142,140,22,Courier New,clWindowText,dAny,edtDRACCTExit,1,Procedure not found,,,,,,,,,,,,,,
+,edtCRCUR,LWEnhancedEdit,pnlENTRYITEMS,,219,86,46,22,Courier New,clWindowText,dAny,edtDRCURExit,1,Procedure not found,,,,,,,,,,,,,,
+,edtCRAMT,LWEnhancedEdit,pnlENTRYITEMS,,375,86,168,22,Courier New,clWindowText,dFloat,edtCRAMTExit,1,"if (edtCRAMT.FloatValue = 0) or (edtEXCHRATE.FloatValue = 0) then exit;
+	if (Sender = edtCALC) then
+  	if (edtCALC.Text <> '*') and (edtCALC.Text <> '/') then edtCALC.Text := '*';
+	case edtCALC.Text[1] of
+  '*': edtDRAMT.FloatValue := edtCRAMT.FloatValue / edtEXCHRATE.FloatValue;
+  '/': edtDRAMT.FloatValue := (edtCRAMT.FloatValue * edtEXCHRATE.FloatValue);","1 edtCRAMT value must be non-zero.
+2 edtEXCHRATE value must be non-zero.
+3 edtCALC text must be either '*' or '/'. If it is any other value, it is defaulted to '*'.",,,,,,,,,,,,,
+,edtCALC,LWEnhancedEdit,pnlENTRYITEMS,,268,86,19,22,Courier New,clWindowText,dAny,edtDRAMTExit,1,"if (edtDRAMT.FloatValue = 0) or (edtEXCHRATE.FloatValue = 0) then exit;
+	if (Sender = edtCALC) then
+  	if (edtCALC.Text <> '*') and (edtCALC.Text <> '/') then edtCALC.Text := '*';
+	case edtCALC.Text[1] of
+  '*': edtCRAMT.FloatValue := edtDRAMT.FloatValue * edtEXCHRATE.FloatValue;
+  '/': edtCRAMT.FloatValue := (edtDRAMT.FloatValue / edtEXCHRATE.FloatValue);","1 edtDRAMT value must not be zero: The FloatValue of edtDRAMT cannot be 0 for the calculation to proceed.
+2 edtEXCHRATE value must not be zero: The FloatValue of edtEXCHRATE cannot be 0 for the calculation to proceed.
+3 edtCALC text must be either '*' or '/': If edtCALC is the sender, its text is constrained to be either '*' or '/'.
+4 edtCALC text default value: If edtCALC text is neither '*' nor '/', it defaults to '*'.",,,,,,,,,,,,,
+,edtEXCHRATE,LWEnhancedEdit,pnlENTRYITEMS,,290,86,83,22,Courier New,clWindowText,dFloat,edtDRAMTExit,1,"if (edtDRAMT.FloatValue = 0) or (edtEXCHRATE.FloatValue = 0) then exit;
+	if (Sender = edtCALC) then
+  	if (edtCALC.Text <> '*') and (edtCALC.Text <> '/') then edtCALC.Text := '*';
+	case edtCALC.Text[1] of
+  '*': edtCRAMT.FloatValue := edtDRAMT.FloatValue * edtEXCHRATE.FloatValue;
+  '/': edtCRAMT.FloatValue := (edtDRAMT.FloatValue / edtEXCHRATE.FloatValue);","1 edtDRAMT value must be non-zero. If zero, the calculation is aborted.
+2 edtEXCHRATE value must be non-zero. If zero, the calculation is aborted.
+3 edtCALC text must be either or /. If edtCALC is the sender and its text is neither, it defaults to.
+4 The calculation operation for edtCRAMT is determined by the first character of edtCALC.Text, which must be either or /.",,,,,,,,,,,,,
+,edtDRACCTNAME,LWEnhancedEdit,pnlENTRYITEMS,,252,114,290,22,Courier New,clWindowText,dAny,,0,,,,,,,,,,,,,,,
+,edtCRACCTNAME,LWEnhancedEdit,pnlENTRYITEMS,,252,142,290,22,Courier New,clWindowText,dAny,,0,,,,,,,,,,,,,,,
+,edtREFERENCE,LWEnhancedEdit,pnlENTRYITEMS,,77,4,465,22,Courier New,clWindowText,dAny,,0,,,,,,,,,,,,,,,
+Post Same (F8),btnPOST,TButton,Entry,,154,276,123,23,Arial,clWindowText,button,Commit1Click,1,Procedure not found,,,,,,,,,,,,,,
+FE EXCHANGE (Information),chkFEEXCH,TCheckBox,Entry,,266,211,199,17,,,tcheckbox,chkFEEXCHClick,1,DetermineTransactionType;,1 Transaction Type Logic: The transaction data must adhere to the business rules and conditions necessary for the successful determination of a valid transaction type by the DetermineTransactionType procedure.,,,,,,,,,,,,,
+,edtAPPROVEDATE,TEdit,Entry,,380,242,125,22,,,textbox,,0,,,,,,,,,,,,,,,
+Approval List,TabSheet2,TTabSheet,MainPageControl,"Panel1, pnlAPPRVLIST",,,,,,,tabpage,TabSheet2Show,1,"if (tag = 99) then exit;
+	RefreshListing (grdAPPRLIST, 'sql_listing');",1 Internal constraint: The procedure exits if the tag variable is 99.,1,0,0,0,0,1,2,0,0,0,0,0,0
+,Panel1,TPanel,Approval List,"Transaction Date, dtSTACSDATE",0,0,581,35,,,tpanel,,0,,,,,,,,,,,,,,,
+Transaction Date,Label19,TLabel,Panel1,,4,8,98,16,,,label,,0,,,,,,,,,,,,,,,
+,dtSTACSDATE,TDateTimePicker,Panel1,,116,5,109,24,,,calendar,,0,,,,,,,,,,,,,,,
+,pnlAPPRVLIST,TPanel,Approval List,"grdAPPRLIST, grdAPPRLISTa",0,35,581,277,,,tpanel,,0,,,,,,,,,,,,,,,
+,grdAPPRLIST,TStringSortGrid,pnlAPPRVLIST,,0,0,581,277,,,tstringsortgrid,,0,,,,,,,,,,,,,,,
+,grdAPPRLISTa,TStringAlignGrid,pnlAPPRVLIST,,450,30,41,89,Courier New,clWindowText,tstringaligngrid,,0,,,,,,,,,,,,,,,
+Correction,CorrectionSheet,TTabSheet,MainPageControl,"grdCORRECTION, grdCORRECTIONa",,,,,,,tabpage,CorrectionSheetShow,1,"RefreshListing (grdCORRECTION, 'sql_correction_listing');","1 The 'sql_correction_listing' parameter must be a valid identifier for a predefined SQL query or data source.
+2 The SQL query referenced by 'sql_correction_listing' must be syntactically correct and executable against the underlying database.
+3 The `grdCORRECTION` component must be a valid, initialized grid object capable of displaying the retrieved data.",0,0,0,0,0,0,0,0,0,0,0,0,0
+,grdCORRECTION,TStringSortGrid,Correction,,0,0,581,312,,,tstringsortgrid,,0,,,,,,,,,,,,,,,
+,grdCORRECTIONa,TStringAlignGrid,Correction,,346,68,107,155,Courier New,clWindowText,tstringaligngrid,,0,,,,,,,,,,,,,,,
+Awaiting Confirmation,tabINCOMPLETE,TTabSheet,MainPageControl,"grdIncompleteItems, grdIncompleteItemsa",,,,,,,tabpage,tabINCOMPLETEShow,1,"RefreshListing (grdIncompleteItems, 'sql_listing_incomplete');","1.  Items displayed in `grdIncompleteItems` must conform to the criteria defined by the 'sql_listing_incomplete' query, identifying them as incomplete.",0,0,0,0,0,0,0,0,0,0,0,0,0
+,grdIncompleteItems,TStringSortGrid,Awaiting Confirmation,,0,0,581,312,,,tstringsortgrid,,0,,,,,,,,,,,,,,,
+,grdIncompleteItemsa,TStringAlignGrid,Awaiting Confirmation,,352,50,125,177,Courier New,clWindowText,tstringaligngrid,,0,,,,,,,,,,,,,,,
+Reports,tabREPORTS,TTabSheet,MainPageControl,"lstREPORTS, Panel2",,,,,,,tabpage,,0,,,1,0,0,0,0,1,1,0,0,1,2,0,0
+,lstREPORTS,TListBox,Reports,,0,33,581,279,Courier New,clWindowText,tlistbox,,0,,,,,,,,,,,,,,,
+,Panel2,TPanel,Reports,"Business Date, btnPRINTRPT, btnVIEWRPT, edtPRINTSTACSDATE",0,0,581,33,,,tpanel,,0,,,,,,,,,,,,,,,
+Business Date,Label21,TLabel,Panel2,,4,8,85,16,,,label,,0,,,,,,,,,,,,,,,
+,btnPRINTRPT,TSpeedButton,Panel2,,236,4,27,25,,,tspeedbutton,btnPRINTRPTClick,1,"if (lstREPORTS.ItemIndex = -1) then exit;
+  if Sender = btnPRINTRPT
+  then PrintReport (lstREPORTS.Items [lstREPORTS.ItemIndex], True)
+  else PrintReport (lstREPORTS.Items [lstREPORTS.ItemIndex], False);","1 Report selection required: An item must be selected from the list of reports (lstREPORTS).
+2 Valid report identifier: The selected report item, passed to the PrintReport function, must represent a valid report that the function can process.",,,,,,,,,,,,,
+,btnVIEWRPT,TSpeedButton,Panel2,,270,4,27,25,,,tspeedbutton,btnPRINTRPTClick,1,"if (lstREPORTS.ItemIndex = -1) then exit;
+  if Sender = btnPRINTRPT
+  then PrintReport (lstREPORTS.Items [lstREPORTS.ItemIndex], True)
+  else PrintReport (lstREPORTS.Items [lstREPORTS.ItemIndex], False);",1 List selection required: An item must be selected in the `lstREPORTS` list box.,,,,,,,,,,,,,
+,edtPRINTSTACSDATE,TDateTimePicker,Panel2,,102,4,109,24,,,calendar,,0,,,,,,,,,,,,,,,
+System Control,tabSYSCONTROL,TTabSheet,MainPageControl,"pnlSYSCTL, pnlDEPTSYSLIST",,,,,,,tabpage,tabSYSCONTROLShow,1,Procedure not found,,5,0,1,2,0,0,3,0,0,0,0,1,0
+,pnlSYSCTL,TPanel,System Control,"DATE, VERIFY DATE, CURRENT DATE, DEPT / SECTION, edtCLOSEDATE, Completed All Entries (CLOSE SYSTEM), cboSECTION",2,6,357,169,,,tpanel,,0,,,,,,,,,,,,,,,
+DATE,lblCURRDATE,TLabel,pnlSYSCTL,,140,46,34,16,Arial,clNavy,label,,0,,,,,,,,,,,,,,,
+VERIFY DATE,Label22,TLabel,pnlSYSCTL,,20,74,85,16,,,label,,0,,,,,,,,,,,,,,,
+CURRENT DATE,Label25,TLabel,pnlSYSCTL,,20,46,99,16,,,label,,0,,,,,,,,,,,,,,,
+DEPT / SECTION,Label26,TLabel,pnlSYSCTL,,20,12,102,16,,,label,,0,,,,,,,,,,,,,,,
+,edtCLOSEDATE,LWEnhancedEdit,pnlSYSCTL,,140,70,193,24,,,dAny,,0,,,,,,,,,,,,,,,
+Completed All Entries (CLOSE SYSTEM),btnCLOSE,TButton,pnlSYSCTL,,52,117,259,29,,,button,btnCLOSEClick,1,Procedure not found,,,,,,,,,,,,,,
+,cboSECTION,TComboBox,pnlSYSCTL,,140,9,195,24,,,tcombobox,,0,,,,,,,,,,,,,,,
+,pnlDEPTSYSLIST,TPanel,System Control,"grdDEPTSYSCTL, grdDEPTSYSCTLa, Panel8",374,2,521,268,,,tpanel,,0,,,,,,,,,,,,,,,
+,grdDEPTSYSCTL,TStringSortGrid,pnlDEPTSYSLIST,,4,4,513,225,,,tstringsortgrid,,0,,,,,,,,,,,,,,,
+,grdDEPTSYSCTLa,TStringAlignGrid,pnlDEPTSYSLIST,,396,21,69,73,Courier New,clWindowText,tstringaligngrid,,0,,,,,,,,,,,,,,,
+,Panel8,TPanel,pnlDEPTSYSLIST,"Double click on cell to OPEN/CLOSE, Refresh",4,229,513,35,,,tpanel,,0,,,,,,,,,,,,,,,
+Double click on cell to OPEN/CLOSE,Label29,TLabel,Panel8,,106,10,219,16,Arial,clWindowText,label,,0,,,,,,,,,,,,,,,
+Refresh,btnREFRESHDEPTLIST,TButton,Panel8,,5,8,75,21,,,button,btnREFRESHDEPTLISTClick,1,tabSYSCONTROLShow (nil);,1. Data population requirement: Any data fields or properties that are to be displayed or managed by the system controls on the tab must be populated with valid values when tabSYSCONTROLShow is executed.,,,,,,,,,,,,,
+,StatusBar1,TStatusBar,Position Reporting Entry,,0,337,572,19,,,tstatusbar,,0,,,,,,,,,,,,,,,
+,pnlDBCONFIG,TPanel,Position Reporting Entry,"Connection String, Driver, Attributes, Userid, Password,   Database Configuration, memCONNSTRING, edtDRIVER, edtATTRIBS, edtUSERID, edtPASSWORD, Close, OK",594,8,457,189,,,tpanel,,0,,,,,,,,,,,,,,,
+Connection String,Label3,TLabel,pnlDBCONFIG,,12,98,103,16,,,label,,0,,,,,,,,,,,,,,,
+Driver,Label13,TLabel,pnlDBCONFIG,,10,28,32,16,,,label,,0,,,,,,,,,,,,,,,
+Attributes,Label14,TLabel,pnlDBCONFIG,,10,50,56,16,,,label,,0,,,,,,,,,,,,,,,
+Userid,Label15,TLabel,pnlDBCONFIG,,10,74,37,16,,,label,,0,,,,,,,,,,,,,,,
+Password,Label16,TLabel,pnlDBCONFIG,,198,74,57,16,,,label,,0,,,,,,,,,,,,,,,
+  Database Configuration,Panel3,TPanel,pnlDBCONFIG,,3,3,451,20,Arial,clNavy,tpanel,,0,,,,,,,,,,,,,,,
+,memCONNSTRING,TMemo,pnlDBCONFIG,,12,116,367,63,Courier New,clWindowText,tmemo,,0,,,,,,,,,,,,,,,
+,edtDRIVER,TEdit,pnlDBCONFIG,,78,28,297,18,Courier New,clWindowText,textbox,,0,,,,,,,,,,,,,,,
+,edtATTRIBS,TEdit,pnlDBCONFIG,,78,50,297,18,Courier New,clWindowText,textbox,,0,,,,,,,,,,,,,,,
+,edtUSERID,TEdit,pnlDBCONFIG,,78,72,109,18,Courier New,clWindowText,textbox,,0,,,,,,,,,,,,,,,
+,edtPASSWORD,TEdit,pnlDBCONFIG,,262,72,113,18,Courier New,clWindowText,textbox,,0,,,,,,,,,,,,,,,
+Close,btnCANCEL,TButton,pnlDBCONFIG,,388,54,59,21,,,button,btnCANCELClick,1,"pnlDBCONFIG.Visible := False;
+	Configuration1.Enabled := True;
+	MainPageControl.Enabled := bMAINPAGESHOW;
+  MainPageControl.Visible := bMAINPAGESHOW;","1 pnlDBCONFIG visibility is set to False
+2 Configuration1 enabled state is set to True
+3 MainPageControl enabled state is determined by the value of bMAINPAGESHOW
+4 MainPageControl visible state is determined by the value of bMAINPAGESHOW",,,,,,,,,,,,,
+OK,btnOK,TButton,pnlDBCONFIG,,388,28,59,21,,,button,btnOKClick,1,"ConnParam.driver_name	:= edtDRIVER.Text;
+	ConnParam.attributes	:= edtATTRIBS.Text;
+  ConnParam.connection_string := memCONNSTRING.Text;
+  ConnParam.userid			:= edtUSERID.Text;
+  ConnParam.password		:= edtPASSWORD.Text;
+	lwdbs.EncodeEncryptedDSNParams (utl.AppPath+DBsection, ConnParam);
+  pnlDBCONFIG.Visible := False;
+	MainPageControl.Enabled := bMAINPAGESHOW;
+  MainPageControl.Visible := bMAINPAGESHOW;
+	Configuration1.Enabled := True;","Here are the validation rules and constraints applied:
+
+1 Input Driver name must be a valid string compatible with DSN encoding as processed by the EncodeEncryptedDSNParams function.
+2 Input Attributes must be a valid string of attributes compatible with DSN encoding as processed by the EncodeEncryptedDSNParams function.
+3 Input Connection string must be a valid connection string format compatible with DSN encoding as processed by the EncodeEncryptedDSNParams function.
+4 Input User ID must be a valid user ID compatible with DSN encoding as processed by the EncodeEncryptedDSNParams function.
+5 Input Password must be a valid password compatible with DSN encoding as processed by the EncodeEncryptedDSNParams function.",,,,,,,,,,,,,
+,pnlUSERID,TPanel,Position Reporting Entry," User ID Maintenance, pctlUSERIDMAINT",594,214,547,319,Arial,clWindowText,tpanel,,0,,,,,,,,,,,,,,,
+ User ID Maintenance,Panel4,TPanel,pnlUSERID,,3,3,541,20,Arial,clNavy,tpanel,,0,,,,,,,,,,,,,,,
+,pctlUSERIDMAINT,TPageControl,pnlUSERID,"2 pages: Users, Departments",3,23,541,293,,,tabcontrol,,0,,,,,,,,,,,,,,,
+Users,TabSheet1,TTabSheet,pctlUSERIDMAINT,"grdUSERID, cboDEPTS, Panel6",,,,,,,tabpage,,0,,,0,0,0,5,0,0,1,0,0,0,0,1,0
+,grdUSERID,TStringSortGrid,Users,,0,0,533,234,Arial,clWindowText,tstringsortgrid,,0,,,,,,,,,,,,,,,
+,cboDEPTS,TComboBox,Users,,72,12,93,23,,,tcombobox,cboDEPTSExit,1,"// if the department control is there, must update data
+	if (not cboDEPTS.Visible) then exit;
+  // get the user id
+  if (grdUSERID.Cells [2 , grdUSERID.row] <> cboDEPTS.Text)
+    then grdUSERID.RowFont [grdUSERID.row].Color := clRed;
+  grdUSERID.Cells [2 , grdUSERID.row] := cboDEPTS.Text;
+	cboDEPTS.Visible := False;","1 The department update logic requires the `cboDEPTS` control to be visible for execution.
+2 A visual alert is triggered by setting the grid row font color to red if the selected department in `cboDEPTS` is different from the existing department value in `grdUSERID.Cells [2 , grdUSERID.row]`.
+3 The text value from `cboDEPTS` is expected to be a valid department identifier or name suitable for assignment to `grdUSERID.Cells [2 , grdUSERID.row]`.",,,,,,,,,,,,,
+,Panel6,TPanel,Users,"New User, Del User, Update, Revert, Close",0,234,533,29,,,tpanel,,0,,,,,,,,,,,,,,,
+New User,btnADDUSER,TButton,Panel6,,2,6,69,21,Arial,clWindowText,button,btnADDUSERClick,1,"s := sPDC;
+	if not InputQuery ('New User', 'Enter new user', s) then exit;
+	s := uppercase (trim(s));
+  if (s = '') then exit;
+  // check for user
+	qryMAIN.SQL.Text := 'select * from TBL_USER '+
+                      ' where userid = '+#39+ s +#39;
+  if not odbc.ExecuteSQL (qryMAIN, True) then exit;
+  if (qryMAIN.RecordCount > 0)
+  then begin
+    Messagedlg ('The user already exists', mtWarning, [mbOK], 0);
+    exit;","1 User input for 'New User' dialog must not be cancelled.
+2 User ID, after trimming and uppercasing, must not be empty.
+3 Database query to check for user existence must execute successfully.
+4 The entered User ID must not already exist in the TBL_USER table.",,,,,,,,,,,,,
+Del User,btnDELUSER,TButton,Panel6,,86,6,69,21,Arial,clWindowText,button,btnDELUSERClick,1,"if (grdUSERID.row = -1) then exit;
+  s := grdUSERID.Cells [1, grdUSERID.row];
+  if (Messagedlg ('Delete user '+ s +'?', mtWarning, [mbYes, mbNo], 0) = mrNo) then exit;
+  // get the user id
+  sUID := grdUSERID.Cells [0, grdUSERID.row];
+  sUID := utl.Tools.Parse (sUID, #1);
+  qryMAIN.SQL.Text := 'delete from TBL_USER where uid = '+#39+ sUID +#39;
+  odbc.ExecuteSQL (qryMAIN, True);
+  Messagedlg ('User '+ s +' deleted', mtConfirmation, [mbOK], 0);
+  LogEntry ('DEL USER '+s);
+  RefreshUserList;","Here are the validation rules, checks, and constraints:
+
+1.  Row selection required: A row must be selected in the user grid (`grdUSERID`) for the deletion process to proceed.
+2.  User confirmation required: The user must confirm the deletion action via a message dialog to proceed.
+3.  User ID string format: The user ID string from `grdUSERID.Cells [0, grdUSERID.row]` is expected to be in a specific delimited format (using #1) as it is passed to `utl.Tools.Parse`.",,,,,,,,,,,,,
+Update,btnUPDATE,TButton,Panel6,,172,6,69,21,Arial,clWindowText,button,btnUPDATEClick,1,Procedure not found,,,,,,,,,,,,,,
+Revert,btnREVERT,TButton,Panel6,,378,6,69,21,Arial,clWindowText,button,btnREVERTClick,1,RefreshUserList;,"1 Inferred User data availability : User data must be retrievable from the underlying data source for the list to be refreshed.
+2 Inferred Valid user record structure : User records must conform to an expected structure or schema for successful retrieval and display within the list.
+3 Inferred Displayable data : Data retrieved for display in the user list must be displayable without causing format or conversion errors.",,,,,,,,,,,,,
+Close,Button1,TButton,Panel6,,460,6,75,21,Arial,clWindowText,button,Button1Click,1,"pnlUSERID.Visible := False;
+	Configuration1.Enabled := True;",No explicit validation rules or constraints are present in the provided code snippet. The code only performs UI element visibility and enabled state modifications.,,,,,,,,,,,,,
+Departments,TabSheet3,TTabSheet,pctlUSERIDMAINT,"Code, Description, edtDEPTCODE, edtDEPTDESC, Add, Del, grdDEPTS",,,,,,,tabpage,TabSheet3Show,1,RefreshDeptList;,1 Department data integrity : Underlying department data must be valid and conform to its expected structure for the list to be successfully refreshed and displayed.,2,2,0,2,0,0,0,0,0,0,0,0,0
+Code,Label27,TLabel,Departments,,10,8,30,15,,,label,,0,,,,,,,,,,,,,,,
+Description,Label28,TLabel,Departments,,142,8,63,15,,,label,,0,,,,,,,,,,,,,,,
+,edtDEPTCODE,TEdit,Departments,,8,24,125,17,Arial,clWindowText,textbox,,0,,,,,,,,,,,,,,,
+,edtDEPTDESC,TEdit,Departments,,142,24,339,17,Arial,clWindowText,textbox,,0,,,,,,,,,,,,,,,
+Add,btnADDDEPT,TButton,Departments,,8,50,47,19,Arial,clWindowText,button,btnADDDEPTClick,1,"edtDEPTCODE.Text := trim (edtDEPTCODE.Text);
+  if (edtDEPTCODE.Text = '')
+  then begin
+    Messagedlg ('Department code cannot be blank!', mtWarning, [mbOK], 0);
+    exit;",1 Department code must not be blank.,,,,,,,,,,,,,
+Del,btnDELDEPT,TButton,Departments,,66,50,47,19,Arial,clWindowText,button,btnDELDEPTClick,1,"if (grdDEPTS.Row < 1) then exit;
+  deptDel := grdDEPTS.Cells [0, grdDEPTS.Row];
+  if (Messagedlg ('Delete department code : '+ deptDel +'?',
+      mtConfirmation, [mbYes, mbNo], 0) = mrNo) then exit;
+  qryMAIN.SQL.Text := 'delete from deptlist where '+
+                      ' deptcode = '+#39+ deptDel +#39;
+  if not odbc.ExecuteSQL (qryMAIN, True) then exit;
+  RefreshDeptList;","Here are the validation rules, checks, or constraints applied:
+
+1.  **Grid row selection check**: A valid row must be selected in the `grdDEPTS` grid (row index must be 1 or greater).
+2.  **User confirmation check**: The user must explicitly confirm the department deletion action.
+3.  **Department code format check**: The `deptDel` value (department code) is expected to be a string suitable for a SQL WHERE clause comparison against the `deptcode` column.
+4.  **Database operation success check**: The SQL DELETE statement must execute successfully. This implies that:
+    *   The `deptcode` value exists in the `deptlist` table.
+    *   Any database-level constraints (like referential integrity) related to `deptcode` in `deptlist` must be satisfied for the deletion to proceed.",,,,,,,,,,,,,
+,grdDEPTS,TStringSortGrid,Departments,,8,75,471,175,Arial,clWindowText,tstringsortgrid,,0,,,,,,,,,,,,,,,
+,pnlNOSTRO,TPanel,Position Reporting Entry," NOSTRO Selection, lstNOSTRO",374,350,325,149,,,tpanel,,0,,,,,,,,,,,,,,,
+ NOSTRO Selection,Panel7,TPanel,pnlNOSTRO,,3,3,319,20,Arial,clNavy,tpanel,,0,,,,,,,,,,,,,,,
+,lstNOSTRO,TListBox,pnlNOSTRO,,6,28,313,115,Courier New,clYellow,tlistbox,,0,,,,,,,,,,,,,,,
+,pnlCHNGPWD,TPanel,Position Reporting Entry,"Old Password, New Password, Confirm Password,  Change Password, edtOLDPWD, edtNEWPWD, edtCFMPWD, OK, Close",14,349,347,107,,,tpanel,,0,,,,,,,,,,,,,,,
+Old Password,Label23,TLabel,pnlCHNGPWD,,8,31,81,16,,,label,,0,,,,,,,,,,,,,,,
+New Password,Label24,TLabel,pnlCHNGPWD,,8,55,86,16,,,label,,0,,,,,,,,,,,,,,,
+Confirm Password,Label20,TLabel,pnlCHNGPWD,,8,79,105,16,,,label,,0,,,,,,,,,,,,,,,
+ Change Password,Panel5,TPanel,pnlCHNGPWD,,3,3,341,20,Arial,clNavy,tpanel,,0,,,,,,,,,,,,,,,
+,edtOLDPWD,TEdit,pnlCHNGPWD,,122,31,145,18,Courier New,clWindowText,textbox,,0,,,,,,,,,,,,,,,
+,edtNEWPWD,TEdit,pnlCHNGPWD,,122,55,145,18,Courier New,clWindowText,textbox,,0,,,,,,,,,,,,,,,
+,edtCFMPWD,TEdit,pnlCHNGPWD,,122,79,145,18,Courier New,clWindowText,textbox,,0,,,,,,,,,,,,,,,
+OK,Button4,TButton,pnlCHNGPWD,,278,32,59,21,,,button,Button4Click,1,"//  keycode = '879uih4fewdty7ugh32e67yfuey897uhi4bjk2iwgyjh247ewftgyu247ef8yi';
+	if (edtNEWPWD.Text <> edtCFMPWD.Text) then begin
+  	Messagedlg ('New password do not match, please ensure that the '+
+    	'new and confirm password match.', mtWarning, [mbOK], 0);
+  	exit;",1 New password and confirm password must match: The value in edtNEWPWD.Text must be identical to the value in edtCFMPWD.Text.,,,,,,,,,,,,,
+Close,Button3,TButton,pnlCHNGPWD,,278,60,59,21,,,button,Button3Click,1,CloseDialog1Click (nil);,"1 Account must be selected.
+2 Transaction Type must be selected.
+3 Transaction Type must be a recognized type (inferred from `DetermineTransactionType` usage).
+4 Amount must be non-empty.
+5 Amount must be in a valid numeric format.
+6 Amount must be greater than zero.
+7 Transaction Date must be non-empty.
+8 Transaction Date must be in a valid date format (e.g., YYYY-MM-DD).
+9 Description must be non-empty.
+10 Saving the transaction must succeed; otherwise, an error message is displayed.",,,,,,,,,,,,,
+,qryMAIN,TADOQuery,Position Reporting Entry,,370,106,,,,,tadoquery,,0,,,,,,,,,,,,,,,
+,qryLOOKUP,TADOQuery,Position Reporting Entry,,398,106,,,,,tadoquery,,0,,,,,,,,,,,,,,,
+,MainMenu1,TMainMenu,Position Reporting Entry,"Commands     , Configuration      , Status      , Help",310,106,,,,,menu,,0,,,,,,,,,,,,,,,
+Commands     ,Commands1,TMenuItem,MainMenu1,"Commit, Repeat Input, Refresh, -, Print Screen, Print Summary, -, Filter        , -, Change Password..., -, E&xit, Close Dialog",,,,,,,tmenuitem,,0,,,,,,,,,,,,,,,
+Commit,Commit1,TMenuItem,Commands     ,,,,,,,,tmenuitem,Commit1Click,1,Procedure not found,,,,,,,,,,,,,,
+Repeat Input,RepeatInput1,TMenuItem,Commands     ,,,,,,,,tmenuitem,Commit1Click,1,Procedure not found,,,,,,,,,,,,,,
+Refresh,Refresh1,TMenuItem,Commands     ,,,,,,,,tmenuitem,Refresh1Click,1,"if grdAPPRLIST.Visible then RefreshListing (grdAPPRLIST, 'sql_listing');
+  if grdCORRECTION.Visible then RefreshListing (grdCORRECTION, 'sql_correction_listing');
+  if grdIncompleteItems.Visible then RefreshListing (grdIncompleteItems, 'sql_listing_incomplete');",1 Inferred: Basic field population is required for data that would eventually populate these grids.,,,,,,,,,,,,,
+-,N2,TMenuItem,Commands     ,,,,,,,,tmenuitem,,0,,,,,,,,,,,,,,,
+Print Screen,PrintList1,TMenuItem,Commands     ,,,,,,,,tmenuitem,PrintList1Click,1,"if (not PrintDialog1.Execute) then exit;
+  PrintScale := poPrintToFit;
+  Print;","1. Printing confirmation: The printing process requires user confirmation from the print dialog. If the user cancels the print dialog, the operation is aborted.",,,,,,,,,,,,,
+Print Summary,PrintSummary1,TMenuItem,Commands     ,,,,,,,,tmenuitem,PrintSummary1Click,1,Procedure not found,,,,,,,,,,,,,,
+-,N4,TMenuItem,Commands     ,,,,,,,,tmenuitem,,0,,,,,,,,,,,,,,,
+Filter        ,Filter1,TMenuItem,Commands     ,,,,,,,,tmenuitem,,0,,,,,,,,,,,,,,,
+-,N1,TMenuItem,Commands     ,,,,,,,,tmenuitem,,0,,,,,,,,,,,,,,,
+Change Password...,ChangePassword1,TMenuItem,Commands     ,,,,,,,,tmenuitem,ChangePassword1Click,1,"MainPageControl.Enabled := False;
+	pnlCHNGPWD.Visible := True;
+  edtOLDPWD.SetFocus;",Inferred: Basic field population required for edtOLDPWD.,,,,,,,,,,,,,
+-,N3,TMenuItem,Commands     ,,,,,,,,tmenuitem,,0,,,,,,,,,,,,,,,
+E&xit,Exit1,TMenuItem,Commands     ,,,,,,,,tmenuitem,Exit1Click,1,close;,"I apologize, but the Delphi Pascal code you intended to provide for analysis is missing from your request.
+
+Please provide the full event handler code so I can extract all the validation rules, checks, and constraints as requested.",,,,,,,,,,,,,
+Close Dialog,CloseDialog1,TMenuItem,Commands     ,,,,,,,,tmenuitem,CloseDialog1Click,1,"if (pnlNOSTRO.Visible) then pnlNOSTRO.Visible := False;
+//	if (.Visible) then .Visible := False;
+	if (pnlCHNGPWD.Visible) then pnlCHNGPWD.Visible := False;
+  MainPageControl.Enabled := True;
+  if lastControl<>nil then begin
+  	if (lastControl.CanFocus) and (lastControl.Visible)
+    then begin
+      if (lastControl = edtDRCUR) then edtDRAMT.SetFocus;
+      if (lastControl = edtCRCUR) then edtCALC.SetFocus;","1 lastControl must be assigned : The lastControl object must not be nil before attempting to set focus.
+2 lastControl must be focusable : The lastControl object must have CanFocus set to True before attempting to set focus.
+3 lastControl must be visible : The lastControl object must have Visible set to True before attempting to set focus.",,,,,,,,,,,,,
+Configuration      ,Configuration1,TMenuItem,MainMenu1,"User Maintenance, Database Access",,,,,,,tmenuitem,,0,,,,,,,,,,,,,,,
+User Maintenance,UserMaintenance1,TMenuItem,Configuration      ,,,,,,,,tmenuitem,UserMaintenance1Click,1,"Configuration1.Enabled := False;
+	MainPageControl.Enabled := False;
+	MainPageControl.Visible := False;
+  pnlUSERID.Left 	:= 1;
+  pnlUSERID.Top		:= 1;
+	pnlUSERID.Visible := True;
+  pnlUSERID.Align := alClient;
+  RefreshUserList;","1 Configuration1 component must be disabled.
+2 MainPageControl component must be disabled.
+3 MainPageControl component must be invisible.
+4 pnlUSERID component must be visible.
+5 pnlUSERID component must be positioned at coordinates (1,1).
+6 pnlUSERID component must be aligned to the client area.",,,,,,,,,,,,,
+Database Access,Security1,TMenuItem,Configuration      ,"Set Main Information Database Userid/Pwd, Set Customer Database Userid/Pwd",,,,,,,tmenuitem,,0,,,,,,,,,,,,,,,
+Set Main Information Database Userid/Pwd,SetMainInformationDatabaseUseridPwd1,TMenuItem,Database Access,,,,,,,,tmenuitem,SetMainInformationDatabaseUseridPwd1Click,1,"DBsection := 'database.prm';
+	if (Sender = SetUseridPwd1) then DBsection := 'database.customer.prm';
+	lwdbs	:= LWDataSources.Create;
+  lwdbs.ODBC_Param_Config_File := utl.AppPath + DBsection;
+	lwdbs.UI_ODBC_Param_Configurator;
+  lwdbs.Free;","1 Sender object check : The Sender object is checked to determine which database configuration profile ('database.prm' or 'database.customer.prm') to load.
+2 ODBC configuration parameters validation : The UI_ODBC_Param_Configurator procedure, when called, performs validations on user-provided ODBC connection parameters.",,,,,,,,,,,,,
+Set Customer Database Userid/Pwd,SetUseridPwd1,TMenuItem,Database Access,,,,,,,,tmenuitem,SetMainInformationDatabaseUseridPwd1Click,1,"DBsection := 'database.prm';
+	if (Sender = SetUseridPwd1) then DBsection := 'database.customer.prm';
+	lwdbs	:= LWDataSources.Create;
+  lwdbs.ODBC_Param_Config_File := utl.AppPath + DBsection;
+	lwdbs.UI_ODBC_Param_Configurator;
+  lwdbs.Free;","1 Inferred: If `UI_ODBC_Param_Configurator` collects user input for ODBC parameters, those parameters must be provided (non-empty).
+2 Inferred: If `UI_ODBC_Param_Configurator` collects user input for ODBC parameters, those parameters must adhere to expected data types and formats (e.g., server names, port numbers).
+3 Inferred: If `UI_ODBC_Param_Configurator` collects user input for database credentials (user ID, password), these fields must be populated.
+4 Inferred: `UI_ODBC_Param_Configurator` may perform a validation to ensure the provided parameters can establish a successful database connection.",,,,,,,,,,,,,
+Status      ,Status1,TMenuItem,MainMenu1,,,,,,,,tmenuitem,,0,,,,,,,,,,,,,,,
+Help,Help1,TMenuItem,MainMenu1,About,,,,,,,tmenuitem,,0,,,,,,,,,,,,,,,
+About,About1,TMenuItem,Help,,,,,,,,tmenuitem,About1Click,1,Showmessage ('CFS Entry Program v'+version);,1. Program version value must be defined and available for display.,,,,,,,,,,,,,
+,pmuSTATUS,TPopupMenu,Position Reporting Entry,,456,106,,,,,tpopupmenu,,0,,,,,,,,,,,,,,,
+,PopupMenu2,TPopupMenu,Position Reporting Entry,,486,106,,,,,tpopupmenu,,0,,,,,,,,,,,,,,,
+,ADOConnection1,TADOConnection,Position Reporting Entry,,340,106,,,,,tadoconnection,,0,,,,,,,,,,,,,,,
+,PrintDialog1,TPrintDialog,Position Reporting Entry,,426,106,,,,,tprintdialog,,0,,,,,,,,,,,,,,,

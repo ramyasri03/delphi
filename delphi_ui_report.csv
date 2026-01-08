@@ -1,0 +1,31 @@
+Page,Top Navigation pages,Labels,Buttons,Form Elements
+Position Reporting Entry,6 pages,,,
+,1. Entry,"Dept., Entry Date, Value Date, Input Date, Entry Date, Transaction Type, Reported,FE EXCHANGE (Information)","Clear ,Post && Clear (F10),Post Same (F8)","edtDEPT,edtENTRYDATE, edtVALUEDATE, edtTYPE, edtPOSREF, pnlENTRYITEMS, edtAPPROVEDATE"
+,2. Approval List,Transaction Date,,"dtSTACSDATE,pnlAPPRVLIST,grdAPPRLIST,grdAPPRLISTa"
+,3. Correction,,,"grdCORRECTION, grdCORRECTIONa"
+,4. Awaiting Confirmation,,,"grdIncompleteItems, grdIncompleteItemsa"
+,5. Reports,Business Date,"btnPRINTRPT,btnVIEWRPT","lstREPORTS,edtPRINTSTACSDATE"
+,6. System Control,"DATE, VERIFY DATE, CURRENT DATE, DEPT / SECTION,Double click on cell to OPEN/CLOSE","Completed All Entries (CLOSE SYSTEM),Refresh","edtCLOSEDATE,cboSECTION,grdDEPTSYSCTL, grdDEPTSYSCTLa"
+,,,,
+,Footer UI menu,Menu Items,Sub Menu Items,
+,4 menus ,,,
+,1. Commands -,"Commit, Repeat Input, Refresh,Print Screen, Print Summary, Filter ,Change Password……,E&xit, Close Dialog",,
+,2. Configuration ,"User Maintenance, Database Access","-Set Main Information Database Userid/Pwd, Set Customer Database Userid/Pwd",
+,3. Status,,,
+,4. Help,About,,
+,,,,
+,Non Categorized,Labels,Buttons,Form Elements
+,1. StatusBar1,,,
+,2. pnlDBCONFIG,"Connection String,Driver,Attributes,Userid,Password,Database Configuration","Close,OK","memCONNSTRING,edtDRIVER,edtATTRIBS,edtUSERID,edtPASSWORD"
+,3. pnlUSERID – 2 pages,,,PctlUSERIDMAINT
+,Users,,"New User, Del User, Update, Revert, Close","grdUSERID, cboDEPTS"
+,Departments,"Code,Description","Add,Del","edtDEPTCODE, edtDEPTDESC,grdDEPTS"
+,4. pnlNOSTRO,,,"NOSTRO Selection, lstNOSTRO"
+,5. pnlCHNGPWD,"Old Password,New Password,Confirm Password,Change Password","OK,Close","edtOLDPWD,edtNEWPWD,edtCFMPWD"
+,6. qryMAIN,,,
+,7. qryLOOKUP,,,
+,8. pmuSTATUS,,,
+,9. pmuSTATUS,,,
+,10. PopupMenu2,,,
+,11. ADOConnection1,,,
+,12. PrintDialog1,,,
