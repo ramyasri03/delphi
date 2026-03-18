@@ -1,0 +1,588 @@
+import sys
+import os
+import re
+import glob
+import json
+from antlr4 import InputStream, CommonTokenStream
+from TandemCobolLexer import TandemCobolLexer
+from TandemCobolParser import TandemCobolParser
+from TandemCobolVisitor import TandemCobolVisitor
+from collections import OrderedDict
+
+# 🔹 Mapping types to labels
+VAR_TYPE_KEYS = {
+    "paragraphs": "paragraphname",
+    "divisions": "division",
+    "sections": "section",
+    "filename": "filename",
+    "filedefinition": "filecontrolclause",
+    "dataname": "dataname",
+    "perform": "performstatement",
+    "variable": "identifier",
+    "screenname": "screenname",
+    "screensection": "screensection",
+    "sqlstatements": "sqlstatement",
+    "evaluatestatements": "evaluatestatement"
+}
+
+# tokens/strings we want to ignore in simple terminal returns
+remove_variables = {'END-OF-SECTION', 'EXIT', '.', 'END-PERFORM'}
+
+def betwen_call_using(first_word, last_word, line):
+    """Return substring between first_word and last_word in `line`."""
+    line_up = line.upper()
+    try:
+        first_pos = line_up.index(first_word.upper())
+        last_pos = line_up.index(last_word.upper(), first_pos + len(first_word))
+    except ValueError:
+        return ""
+    return line[first_pos + len(first_word):last_pos].strip()
+
+
+def find_after(first_word, line):
+    first_pos = line.find(first_word)
+    return line[first_pos + len(first_word):]
+    
+def copy_check(source_folder,input_file):
+    copybook=[]
+    with open(input_file,'r') as file:
+        lines = file.readlines()
+    with open(input_file,'w') as opfile: 
+        for line in lines:
+            if not line.strip().startswith("*") and not 'GOBACK' in line:
+                if 'COPY' in line.upper():      
+                    space_count = len(line)-len(line.lstrip())
+                    copy_file = find_after('COPY',line).strip().replace('.','')
+                    copybook.append(copy_file)
+                    copy_file_path = source_folder + "\\" + copy_file
+                    if copy_file_path:
+                        with open(copy_file_path,'r') as cfile:
+                            l = cfile.readlines()
+                            line_space = len(l[0])-len(l[0].lstrip()) - space_count
+                            for ll in l:
+                                opfile.write(ll[line_space:])
+                else:
+                    opfile.write(line)
+    return opfile,copybook
+
+class AstNode:
+    def __init__(self, name, **kwargs):
+        self.type = name
+        self.attributes = kwargs.copy()
+        self.ordered_content = []
+        self.grouped = {k: [] for k in VAR_TYPE_KEYS}
+
+    def add_ordered(self, label, node):
+        self.ordered_content.append((label, node))
+        if label in self.grouped:
+            self.grouped[label].append(node)
+
+    def is_meaningful(self):
+        for v in self.attributes.values():
+            if v:
+                return True
+        if self.ordered_content:
+            return True
+        return False
+
+    def _convert_attr(self, value):
+        if isinstance(value, AstNode):
+            return value.to_dict()
+        if isinstance(value, list):
+            converted = []
+            for item in value:
+                if isinstance(item, AstNode):
+                    converted.append(item.to_dict())
+                else:
+                    converted.append(item)
+            return converted
+        return value
+
+    def to_dict(self):
+        if not self.is_meaningful():
+            return None
+        node_dict = {'type': self.type}
+        for k, v in self.attributes.items():
+            node_dict[k] = self._convert_attr(v)
+        for label, node in self.ordered_content:
+            if node is None:
+                continue
+            node_serial = node.to_dict()
+            if node_serial is None:
+                continue
+            if label not in node_dict:
+                node_dict[label] = []
+            node_dict[label].append(node_serial)
+        for k, lst in self.grouped.items():
+            if lst and k not in node_dict:
+                node_dict[k] = [n.to_dict() for n in lst if n.to_dict() is not None]
+        return node_dict
+
+class AstVisitor(TandemCobolVisitor):
+    def __init__(self, token_stream=None):
+        super().__init__()
+        self.token_stream = token_stream
+        self.dependencies = {"COPY": [], "CALL": []}
+        self.declared_vars = OrderedDict()
+        self.variable_usage = []
+        self.control_flow = []
+        self.current_paragraph = None
+        self.paragraph_stack = []
+
+    def get_text_with_spaces(self, ctx):
+        if ctx is None or getattr(ctx, "start", None) is None or getattr(ctx, "stop", None) is None:
+            return ""
+        try:
+            start_idx = ctx.start.tokenIndex
+            stop_idx = ctx.stop.tokenIndex
+            raw = self.token_stream.getText(start=start_idx, stop=stop_idx)
+        except Exception:
+            raw = ctx.getText()
+        return re.sub(r'\s+', ' ', raw).strip()
+
+    def visitChildren(self, ctx):
+        name = type(ctx).__name__.replace('Context', '')
+        node = AstNode(name)
+
+        if not getattr(ctx, 'children', None):
+            return ctx.getText()
+
+        for child in ctx.children:
+            # --- Paragraph tracking fix ---
+            child_rule_name = None
+            if hasattr(child, 'getRuleIndex') and child.getRuleIndex() is not None:
+                child_rule_name = TandemCobolParser.ruleNames[child.getRuleIndex()]
+
+            if child_rule_name == 'paragraph':
+                # Save previous paragraph
+                self.paragraph_stack.append(self.current_paragraph)
+
+                # Extract only paragraph name
+                raw_para_text = child.getText() or ""
+                m = re.match(r'\s*([A-Za-z0-9\-_]+)', raw_para_text.strip())
+                para_name = m.group(1) if m else raw_para_text.strip()
+
+                self.current_paragraph = para_name.upper() if para_name else para_name
+
+            # --- Now visit the child ---
+            child_ast = self.visit(child)
+            if child_ast is None:
+                continue
+
+            # Restore paragraph after leaving paragraph node
+            if child_rule_name == 'paragraph':
+                self.current_paragraph = self.paragraph_stack.pop() if self.paragraph_stack else None
+
+            if isinstance(child_ast, str):
+                norm = child_ast.strip()
+                if not norm or norm.upper() in remove_variables:
+                    continue
+                if hasattr(child, 'getRuleIndex'):
+                    key = TandemCobolParser.ruleNames[child.getRuleIndex()]
+                else:
+                    key = 'value'
+                prev = node.attributes.get(key)
+                if prev is None:
+                    #if child_ast != '.':
+                    node.attributes[key] = child_ast
+                elif isinstance(prev, list):
+                    print("elif",child_ast)
+                    prev.append(child_ast)
+                else:
+                    node.attributes[key] = f"{prev} {child_ast}"
+                continue
+            lname = (child_ast.type or "").lower()
+            try:
+                if hasattr(child, "start") and hasattr(child, "stop"):
+                    if 'datadescriptionentry' == lname:
+                        txt = self.get_text_with_spaces(child)
+                        dot_count = txt.count('.')
+                        if dot_count<=1:
+                            data_node = self.extract_datadescription_entry(txt)
+                            if data_node:
+                                node.add_ordered("datadescription", data_node)   
+                        else:
+                            for segment in txt.split('.'):
+                                segment = segment.strip()
+                                if not segment:
+                                    continue
+                                data_node = self.extract_datadescription_entry(segment)
+                                if data_node:
+                                    node.add_ordered("datadescription", data_node)
+                        continue
+                    # if lname =='paragraph':
+                    #     para_name = child.getText()
+                    #     self.current_paragraph = para_name
+                    if 'movestatement' == lname:
+                        move_node = self.extract_move_statement(child)
+                        if move_node:
+                            node.add_ordered("movestatements", move_node)
+                            continue
+                    if 'gotostatement' == lname:
+                        goto_node = self.extract_goto_statement(child)
+                        if goto_node:
+                            node.add_ordered("gotostatements", goto_node)
+                            continue
+                    if 'performstatement' == lname:
+                        perform_node = self.extract_perform_statement(child)
+                        if perform_node:
+                            node.add_ordered("performstatements", perform_node)
+                            continue
+                    if 'ifstatement' == lname:
+                        if_node = self.extract_if_statement(child)
+                        if if_node:
+                            node.add_ordered("ifstatements", if_node)
+                            continue
+                    if 'evaluatestatement' == lname:
+                        eval_node = self.extract_evaluate_statement(child)
+                        if eval_node:
+                            node.add_ordered("evaluatestatements", eval_node)
+                            continue
+                    if 'callstatement' == lname:
+                        call_node = self.extract_call_statement(child)
+                        if call_node:
+                            node.add_ordered("calltatements", call_node)
+                            continue
+                    if 'sqlstatement' == lname or 'exec' == lname:
+                        exec_node = self.extract_exec_statement(child)
+                        if exec_node:
+                            node.add_ordered("sqlstatements", exec_node)
+                            continue
+                    if 'initializestatement' == lname:
+                        init_node = self.extract_init_statement(child)
+                        if init_node:
+                            node.add_ordered("Initializestatements", init_node)
+                            continue
+                    
+                    if 'setstatement' == lname:
+                        set_node = self.extract_set_statement(child)
+                        if set_node:
+                            node.add_ordered("setstatements", set_node)
+                            continue
+                    if 'computestatement' == lname:
+                        comp_node = self.extract_compute_statement(child)
+                        if comp_node:
+                            node.add_ordered("computestatements", comp_node)
+                            continue
+
+                matched = False
+                for key, value in VAR_TYPE_KEYS.items():
+                    # if 'divisionbody' in lname:
+                    #     print("yes")
+                    if value in lname and lname != 'sectionheader' and 'divisionbody' not in lname:
+                        node.add_ordered(key, child_ast)
+                        matched = True
+                        break
+
+                if not matched:
+                    node.add_ordered("statements", child_ast)
+
+            except Exception:
+                node.add_ordered("statements", child_ast)
+
+        return node
+
+    def visitTerminal(self, node):
+        return node.getText()
+
+    def extract_datadescription_entry(self, txt):
+        #txt = self.get_text_with_spaces(ctx)
+        if not txt:
+            return None
+        children_text = txt.upper().replace('.','')
+        tokens = children_text.split()
+        if len(tokens) >= 2:
+            level = tokens[0]
+            name = tokens[1]
+            pic_clause = None
+            value_clause = None
+            pic_index = 0
+            if "PIC" in tokens:
+                pic_index = tokens.index("PIC")
+                if pic_index + 1 < len(tokens):
+                    pic_clause = tokens[pic_index + 1]
+                value_clause = " ".join(tokens[pic_index + 2 :])
+            else:
+                value_clause = " ".join(tokens[2:])
+            # if value_clause:
+            #     self.declared_vars[name] = {
+            #     "level":level,
+            #     "pic":pic_clause,
+            #     "value":value_clause
+            #     }
+            #     return AstNode("variable", var_name=name, level=level, pic=pic_clause,value=value_clause)
+            self.declared_vars[name] = {
+                "level":level,
+                "pic":pic_clause,
+                "value":value_clause
+            }
+            return AstNode("variable", var_name=name, level=level, pic=pic_clause, value=value_clause)
+        return None
+    
+    def extract_perform_statement(self, ctx):
+        raw_text = self.get_text_with_spaces(ctx).strip()
+        upper_text = raw_text.upper().replace(".", "")
+
+        if not upper_text.startswith("PERFORM"):
+            return None
+
+        # Remove the leading 'PERFORM'
+        remaining = raw_text[len("PERFORM"):].strip()
+
+        target = None
+        thru_target = None
+        extra_details = None
+
+        # Check if THRU is present
+        if " THRU " in upper_text:
+            before_thru, after_thru = remaining.split("THRU", 1)
+            target = before_thru.strip()
+            after_thru = after_thru.strip()
+            thru_target = after_thru.split(" ", 1)[0].strip()  # Take first word after THRU
+            extra_details = after_thru[len(thru_target):].strip() or None
+        else:
+            # No THRU: check for extra keywords like UNTIL or VARYING
+            parts = remaining.split(maxsplit=1)
+            target = parts[0].strip()
+            extra_details = parts[1].strip() if len(parts) > 1 else None
+
+        # Add control flow link
+        if self.current_paragraph:
+            self.control_flow.append({
+                "from": self.current_paragraph,
+                "to": target,
+            })
+
+        return AstNode(
+            "perform",
+            target=target,
+            thru=thru_target,
+            details=extra_details
+        )
+   
+    def extract_move_statement(self, ctx):
+        raw_text = self.get_text_with_spaces(ctx).upper()
+        if not raw_text or 'MOVE' not in raw_text:
+            return None
+        after_move = raw_text.split('MOVE', 1)[1].strip()
+        parts = re.split(r'\bTO\b', after_move, maxsplit=1)
+        if len(parts) == 2:
+            left = parts[0].strip()
+            right = parts[1].strip()
+            self.variable_usage.append({
+                "action": "MOVE",
+                "from": left,
+                "to": right
+            })
+            return AstNode('move', source=left, target=right)
+        return AstNode('move', source=after_move, target=None)
+
+    def extract_if_statement(self, ctx):
+        raw_text = self.get_text_with_spaces(ctx)
+        if not raw_text:
+            return None
+        raw_up = raw_text.upper().replace(".", "")
+        if not raw_up.strip().startswith("IF"):
+            return None
+
+        remain = raw_text.strip()
+        up_remain = remain.upper()
+        else_part = None
+        if " ELSE " in up_remain:
+            parts = re.split(r'\bELSE\b', remain, maxsplit=1)
+            if_then_part = parts[0]
+            else_part = parts[1].strip()
+        else:
+            if_then_part = remain
+
+        action_keywords = ['DISPLAY','MOVE','GOTO','COMPUTE','IF','INITIALIZE','PERFORM','CALL','EXEC','SET']
+        up_if_then = if_then_part.upper()
+        condition = ""
+        then_block = ""
+        if up_if_then.strip().startswith("IF"):
+            up_after_if = up_if_then.strip()[2:].strip()
+            first_match_idx = None
+            first_kw = None
+            for kw in action_keywords:
+                m = re.search(r'\b' + re.escape(kw) + r'\b', up_after_if)
+                if m:
+                    idx = m.start()
+                    if first_match_idx is None or idx < first_match_idx:
+                        first_match_idx = idx
+                        first_kw = kw
+            if first_match_idx is not None:
+                condition = up_after_if[:first_match_idx].strip()
+                then_block = if_then_part.strip()[len("IF") + 1 + len(condition):].strip()
+            else:
+                condition = up_after_if.strip()
+                then_block = ""
+        else:
+            first_match_idx = None
+            for kw in action_keywords:
+                m = re.search(r'\b' + re.escape(kw) + r'\b', up_if_then)
+                if m:
+                    idx = m.start()
+                    if first_match_idx is None or idx < first_match_idx:
+                        first_match_idx = idx
+            if first_match_idx is not None:
+                condition = up_if_then[:first_match_idx].strip()
+                then_block = if_then_part.strip()[first_match_idx:].strip()
+            else:
+                condition = if_then_part.strip()
+                then_block = ""
+        self.variable_usage.append({"action": "CHECK","variable": condition})
+        return AstNode('if', condition=condition, then=then_block, else_block=(else_part.strip() if else_part else None))
+
+    def extract_goto_statement(self, ctx):
+        raw_text = self.get_text_with_spaces(ctx).strip()
+        if not raw_text:
+            return None
+        up = raw_text.upper()
+        if 'GOTO' in up:
+            target = re.sub(r'(?i)\bGOTO\b', '', up).strip()
+            if self.current_paragraph:
+                self.control_flow.append({"from":self.current_paragraph,"to":target})
+            return AstNode("goto", target=target)
+        return AstNode("goto", target=raw_text)
+
+    def extract_evaluate_statement(self, ctx):
+        raw_text = self.get_text_with_spaces(ctx).strip()
+        if not raw_text:
+            return None
+        return AstNode("evaluate", text=raw_text)
+
+    def extract_call_statement(self, ctx):
+        raw_text = self.get_text_with_spaces(ctx)
+        if not raw_text:
+            return None
+        up = raw_text.upper()
+        if 'CALL' in up:
+            if 'USING' in up:
+                value = betwen_call_using("CALL", "USING", raw_text)
+            else:
+                parts = re.split(r'(?i)\bCALL\b', raw_text, maxsplit=1)
+                value = parts[1].strip() if len(parts) > 1 else ""
+            value = value.strip().strip("'\"")
+            if value and value not in self.dependencies.get("CALL", []):
+                self.dependencies["CALL"].append(value)
+            self.variable_usage.append({"action": "CALL_ARG", "variable": value})  
+            return AstNode('call', value=value)
+        return None
+
+    def extract_exec_statement(self, ctx):
+        raw_text = self.get_text_with_spaces(ctx)
+        if not raw_text:
+            return None
+        return AstNode('exec', text=raw_text)
+
+    def extract_init_statement(self, ctx):
+        raw_text = self.get_text_with_spaces(ctx)
+        if not raw_text:
+            return None
+        return AstNode('initialize', text=raw_text)
+
+    def extract_set_statement(self, ctx):
+        raw_text = self.get_text_with_spaces(ctx).upper()
+        if not raw_text or 'SET' not in raw_text:
+            return None
+        after_set = raw_text.split('SET', 1)[1].strip()
+        parts = re.split(r'\bTO\b', after_set, maxsplit=1)
+        if len(parts) == 2:
+            left = parts[0].strip()
+            right = parts[1].strip()
+            self.variable_usage.append({
+                "action": "SET",
+                "from": left,
+                "to": right
+            })
+            return AstNode('set', source=left, target=right)
+        return AstNode('set', source=after_move, target=None)
+
+    def extract_compute_statement(self, ctx):
+        raw_text = self.get_text_with_spaces(ctx).upper()
+        if not raw_text or 'COMPUTE' not in raw_text:
+            return None
+        after_set = raw_text.split('COMPUTE', 1)[1].strip()
+        parts = re.split(r'\s*=\s*', after_set, maxsplit=1)
+        if len(parts) == 2:
+            left = parts[0].strip()
+            right = parts[1].strip()
+            self.variable_usage.append({
+                "action": "COMPUTE",
+                "from": right,
+                "to": left
+            })
+            return AstNode('compute', source=right, target=left)
+        return AstNode('compute', source=after_move, target=None)
+
+def main(source_code, source_path):
+    file_base = os.path.splitext(os.path.basename(source_path))[0]
+    prog_match = re.search(r'PROGRAM-ID\.\s*([\w-]+)\.', source_code, re.IGNORECASE)
+    dialect = "tandem" if re.search(r'\bBEGIN TRANSACTION\b|\bTERMINATE\b|\bTANDEM\b', source_code, re.IGNORECASE) else "ibm"
+
+    prog_name = prog_match.group(1) if prog_match else file_base
+
+    input_stream = InputStream(source_code)
+    print("input_stream",input_stream)
+    lexer = TandemCobolLexer(input_stream)
+    print("lexer",lexer)
+    tokens = CommonTokenStream(lexer)
+    print("tokens",tokens)
+    parser = TandemCobolParser(tokens)
+    print("parser",parser)
+    tree = parser.compilationUnit()
+    print("tree",tree)
+
+    visitor = AstVisitor(token_stream=tokens)
+    #dependencies_dict = {"COPY": [], "CALL": []}
+    #visitor.dependencies = dependencies_dict
+
+    ast = visitor.visit(tree)
+    ast_dict = OrderedDict()
+    ast_dict['dialect'] = dialect
+    raw = ast.to_dict() if isinstance(ast, AstNode) else None
+    if raw:
+        for k, v in raw.items():
+            ast_dict[k] = v
+
+    return {
+        "ast": ast_dict,
+        "dependencies":  visitor.dependencies,
+        "variables": {
+            "declared_variables": visitor.declared_vars,
+            "variable_usage": list(visitor.variable_usage)
+        },
+        "control_flow": visitor.control_flow,
+        "dialect": "ibm"
+    }
+
+if __name__ == '__main__':
+    #source_folder =r"C:\Users\2782313\Desktop\pythonprjt\TANDEM\DTN82C_RAW\COBOL_program"
+    source_folder = r"C:\Users\Ramya\OneDrive\gen_AI\cobol_to_ast_conversion\sample_folder"
+    #source_folder = r"C:\Users\2782313\Desktop\pythonprjt\Cobol Codebase Trimmed\COBOL85"
+    output_path = r"C:\Users\Ramya\OneDrive\gen_AI\cobol_to_ast_conversion\Output\Cobol_ast_to_visitor_31pgms.json"
+    
+    if not os.path.isdir(source_folder):
+        print(f"Error: folder not found: {source_folder}")
+        sys.exit(1)
+
+    cobol_files = sorted(glob.glob(os.path.join(source_folder, "*.cbl")) +
+                         glob.glob(os.path.join(source_folder, "*.cob")))
+    if not cobol_files:
+        print("No COBOL files found in folder")
+        sys.exit(0)
+
+    combined_output = OrderedDict()
+    for file_path in cobol_files:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            source_code = f.read()
+        print(f"Parsing {file_path} ...")
+        file_result = main(source_code, file_path)
+        file_key = os.path.splitext(os.path.basename(file_path))[0]
+        combined_output[file_key] = file_result
+
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    with open(output_path, 'w', encoding='utf-8') as f:
+        json.dump(combined_output, f, indent=2)
+
+    print(f"Combined AST saved to {output_path}")
